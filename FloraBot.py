@@ -1,4 +1,5 @@
 from flask import Flask, request
+from loguru import logger
 import requests
 import importlib.util
 import os
@@ -8,6 +9,7 @@ import sys
 import subprocess
 import platform
 import ctypes
+import datetime 
 
 flora_logo = "\x1b[38;2;255;0;0m█\x1b[38;2;250;0;4m█\x1b[38;2;246;0;8m█\x1b[38;2;242;0;12m█\x1b[38;2;238;0;16m█\x1b[38;2;234;0;20m█\x1b[38;2;229;0;25m█\x1b[38;2;225;0;29m╗\x1b[38;2;221;0;33m \x1b[38;2;217;0;37m█\x1b[38;2;213;0;41m█\x1b[38;2;209;0;45m╗\x1b[38;2;204;0;50m \x1b[38;2;200;0;54m \x1b[38;2;196;0;58m \x1b[38;2;192;0;62m \x1b[38;2;188;0;66m \x1b[38;2;183;0;71m \x1b[38;2;179;0;75m \x1b[38;2;175;0;79m \x1b[38;2;171;0;83m \x1b[38;2;167;0;87m \x1b[38;2;163;0;91m \x1b[38;2;158;0;96m \x1b[38;2;154;0;100m \x1b[38;2;150;0;104m \x1b[38;2;146;0;108m \x1b[38;2;142;0;112m \x1b[38;2;137;0;117m \x1b[38;2;133;0;121m \x1b[38;2;129;0;125m \x1b[38;2;125;0;129m \x1b[38;2;121;0;133m \x1b[38;2;117;0;137m \x1b[38;2;112;0;142m \x1b[38;2;108;0;146m \x1b[38;2;104;0;150m \x1b[38;2;100;0;154m \x1b[38;2;96;0;158m█\x1b[38;2;91;0;163m█\x1b[38;2;87;0;167m█\x1b[38;2;83;0;171m█\x1b[38;2;79;0;175m█\x1b[38;2;75;0;179m█\x1b[38;2;71;0;183m╗\x1b[38;2;66;0;188m \x1b[38;2;62;0;192m \x1b[38;2;58;0;196m \x1b[38;2;54;0;200m \x1b[38;2;50;0;204m \x1b[38;2;45;0;209m \x1b[38;2;41;0;213m \x1b[38;2;37;0;217m \x1b[38;2;33;0;221m \x1b[38;2;29;0;225m \x1b[38;2;25;0;229m \x1b[38;2;20;0;234m \x1b[38;2;16;0;238m \x1b[38;2;12;0;242m \x1b[38;2;8;0;246m \x1b[38;2;4;0;250m \x1b[38;2;0;0;255m \x1b[0m\n\x1b[38;2;255;0;0m█\x1b[38;2;250;0;4m█\x1b[38;2;246;0;8m╔\x1b[38;2;242;0;12m═\x1b[38;2;238;0;16m═\x1b[38;2;234;0;20m═\x1b[38;2;229;0;25m═\x1b[38;2;225;0;29m╝\x1b[38;2;221;0;33m \x1b[38;2;217;0;37m█\x1b[38;2;213;0;41m█\x1b[38;2;209;0;45m║\x1b[38;2;204;0;50m \x1b[38;2;200;0;54m \x1b[38;2;196;0;58m \x1b[38;2;192;0;62m \x1b[38;2;188;0;66m \x1b[38;2;183;0;71m \x1b[38;2;179;0;75m \x1b[38;2;175;0;79m \x1b[38;2;171;0;83m \x1b[38;2;167;0;87m \x1b[38;2;163;0;91m \x1b[38;2;158;0;96m \x1b[38;2;154;0;100m \x1b[38;2;150;0;104m \x1b[38;2;146;0;108m \x1b[38;2;142;0;112m \x1b[38;2;137;0;117m \x1b[38;2;133;0;121m \x1b[38;2;129;0;125m \x1b[38;2;125;0;129m \x1b[38;2;121;0;133m \x1b[38;2;117;0;137m \x1b[38;2;112;0;142m \x1b[38;2;108;0;146m \x1b[38;2;104;0;150m \x1b[38;2;100;0;154m \x1b[38;2;96;0;158m█\x1b[38;2;91;0;163m█\x1b[38;2;87;0;167m╔\x1b[38;2;83;0;171m═\x1b[38;2;79;0;175m═\x1b[38;2;75;0;179m█\x1b[38;2;71;0;183m█\x1b[38;2;66;0;188m╗\x1b[38;2;62;0;192m \x1b[38;2;58;0;196m \x1b[38;2;54;0;200m \x1b[38;2;50;0;204m \x1b[38;2;45;0;209m \x1b[38;2;41;0;213m \x1b[38;2;37;0;217m \x1b[38;2;33;0;221m \x1b[38;2;29;0;225m \x1b[38;2;25;0;229m \x1b[38;2;20;0;234m \x1b[38;2;16;0;238m█\x1b[38;2;12;0;242m█\x1b[38;2;8;0;246m╗\x1b[38;2;4;0;250m \x1b[38;2;0;0;255m \x1b[0m\n\x1b[38;2;255;0;0m█\x1b[38;2;250;0;4m█\x1b[38;2;246;0;8m█\x1b[38;2;242;0;12m█\x1b[38;2;238;0;16m█\x1b[38;2;234;0;20m╗\x1b[38;2;229;0;25m \x1b[38;2;225;0;29m \x1b[38;2;221;0;33m \x1b[38;2;217;0;37m█\x1b[38;2;213;0;41m█\x1b[38;2;209;0;45m║\x1b[38;2;204;0;50m \x1b[38;2;200;0;54m \x1b[38;2;196;0;58m \x1b[38;2;192;0;62m█\x1b[38;2;188;0;66m█\x1b[38;2;183;0;71m█\x1b[38;2;179;0;75m█\x1b[38;2;175;0;79m╗\x1b[38;2;171;0;83m \x1b[38;2;167;0;87m \x1b[38;2;163;0;91m \x1b[38;2;158;0;96m█\x1b[38;2;154;0;100m█\x1b[38;2;150;0;104m█\x1b[38;2;146;0;108m█\x1b[38;2;142;0;112m╗\x1b[38;2;137;0;117m \x1b[38;2;133;0;121m \x1b[38;2;129;0;125m█\x1b[38;2;125;0;129m█\x1b[38;2;121;0;133m█\x1b[38;2;117;0;137m█\x1b[38;2;112;0;142m╗\x1b[38;2;108;0;146m \x1b[38;2;104;0;150m \x1b[38;2;100;0;154m \x1b[38;2;96;0;158m█\x1b[38;2;91;0;163m█\x1b[38;2;87;0;167m█\x1b[38;2;83;0;171m█\x1b[38;2;79;0;175m█\x1b[38;2;75;0;179m█\x1b[38;2;71;0;183m╔\x1b[38;2;66;0;188m╝\x1b[38;2;62;0;192m \x1b[38;2;58;0;196m \x1b[38;2;54;0;200m█\x1b[38;2;50;0;204m█\x1b[38;2;45;0;209m█\x1b[38;2;41;0;213m█\x1b[38;2;37;0;217m╗\x1b[38;2;33;0;221m \x1b[38;2;29;0;225m \x1b[38;2;25;0;229m█\x1b[38;2;20;0;234m█\x1b[38;2;16;0;238m█\x1b[38;2;12;0;242m█\x1b[38;2;8;0;246m█\x1b[38;2;4;0;250m█\x1b[38;2;0;0;255m╗\x1b[0m\n\x1b[38;2;255;0;0m█\x1b[38;2;250;0;4m█\x1b[38;2;246;0;8m╔\x1b[38;2;242;0;12m═\x1b[38;2;238;0;16m═\x1b[38;2;234;0;20m╝\x1b[38;2;229;0;25m \x1b[38;2;225;0;29m \x1b[38;2;221;0;33m \x1b[38;2;217;0;37m█\x1b[38;2;213;0;41m█\x1b[38;2;209;0;45m║\x1b[38;2;204;0;50m \x1b[38;2;200;0;54m \x1b[38;2;196;0;58m█\x1b[38;2;192;0;62m█\x1b[38;2;188;0;66m╔\x1b[38;2;183;0;71m═\x1b[38;2;179;0;75m█\x1b[38;2;175;0;79m█\x1b[38;2;171;0;83m╗\x1b[38;2;167;0;87m \x1b[38;2;163;0;91m█\x1b[38;2;158;0;96m█\x1b[38;2;154;0;100m╔\x1b[38;2;150;0;104m═\x1b[38;2;146;0;108m═\x1b[38;2;142;0;112m╝\x1b[38;2;137;0;117m \x1b[38;2;133;0;121m█\x1b[38;2;129;0;125m█\x1b[38;2;125;0;129m╔\x1b[38;2;121;0;133m═\x1b[38;2;117;0;137m█\x1b[38;2;112;0;142m█\x1b[38;2;108;0;146m╗\x1b[38;2;104;0;150m \x1b[38;2;100;0;154m \x1b[38;2;96;0;158m█\x1b[38;2;91;0;163m█\x1b[38;2;87;0;167m╔\x1b[38;2;83;0;171m═\x1b[38;2;79;0;175m═\x1b[38;2;75;0;179m█\x1b[38;2;71;0;183m█\x1b[38;2;66;0;188m╗\x1b[38;2;62;0;192m \x1b[38;2;58;0;196m█\x1b[38;2;54;0;200m█\x1b[38;2;50;0;204m╔\x1b[38;2;45;0;209m═\x1b[38;2;41;0;213m█\x1b[38;2;37;0;217m█\x1b[38;2;33;0;221m╗\x1b[38;2;29;0;225m \x1b[38;2;25;0;229m \x1b[38;2;20;0;234m╚\x1b[38;2;16;0;238m█\x1b[38;2;12;0;242m█\x1b[38;2;8;0;246m╔\x1b[38;2;4;0;250m═\x1b[38;2;0;0;255m╝\x1b[0m\n\x1b[38;2;255;0;0m█\x1b[38;2;250;0;4m█\x1b[38;2;246;0;8m║\x1b[38;2;242;0;12m \x1b[38;2;238;0;16m \x1b[38;2;234;0;20m \x1b[38;2;229;0;25m \x1b[38;2;225;0;29m \x1b[38;2;221;0;33m \x1b[38;2;217;0;37m█\x1b[38;2;213;0;41m█\x1b[38;2;209;0;45m█\x1b[38;2;204;0;50m╗\x1b[38;2;200;0;54m \x1b[38;2;196;0;58m╚\x1b[38;2;192;0;62m█\x1b[38;2;188;0;66m█\x1b[38;2;183;0;71m█\x1b[38;2;179;0;75m█\x1b[38;2;175;0;79m╔\x1b[38;2;171;0;83m╝\x1b[38;2;167;0;87m \x1b[38;2;163;0;91m█\x1b[38;2;158;0;96m█\x1b[38;2;154;0;100m║\x1b[38;2;150;0;104m \x1b[38;2;146;0;108m \x1b[38;2;142;0;112m \x1b[38;2;137;0;117m \x1b[38;2;133;0;121m╚\x1b[38;2;129;0;125m█\x1b[38;2;125;0;129m█\x1b[38;2;121;0;133m█\x1b[38;2;117;0;137m█\x1b[38;2;112;0;142m█\x1b[38;2;108;0;146m█\x1b[38;2;104;0;150m╗\x1b[38;2;100;0;154m \x1b[38;2;96;0;158m█\x1b[38;2;91;0;163m█\x1b[38;2;87;0;167m█\x1b[38;2;83;0;171m█\x1b[38;2;79;0;175m█\x1b[38;2;75;0;179m█\x1b[38;2;71;0;183m╔\x1b[38;2;66;0;188m╝\x1b[38;2;62;0;192m \x1b[38;2;58;0;196m╚\x1b[38;2;54;0;200m█\x1b[38;2;50;0;204m█\x1b[38;2;45;0;209m█\x1b[38;2;41;0;213m█\x1b[38;2;37;0;217m╔\x1b[38;2;33;0;221m╝\x1b[38;2;29;0;225m \x1b[38;2;25;0;229m \x1b[38;2;20;0;234m \x1b[38;2;16;0;238m█\x1b[38;2;12;0;242m█\x1b[38;2;8;0;246m█\x1b[38;2;4;0;250m╗\x1b[38;2;0;0;255m \x1b[0m\n\x1b[38;2;255;0;0m╚\x1b[38;2;250;0;4m═\x1b[38;2;246;0;8m╝\x1b[38;2;242;0;12m \x1b[38;2;238;0;16m \x1b[38;2;234;0;20m \x1b[38;2;229;0;25m \x1b[38;2;225;0;29m \x1b[38;2;221;0;33m \x1b[38;2;217;0;37m╚\x1b[38;2;213;0;41m═\x1b[38;2;209;0;45m═\x1b[38;2;204;0;50m╝\x1b[38;2;200;0;54m \x1b[38;2;196;0;58m \x1b[38;2;192;0;62m╚\x1b[38;2;188;0;66m═\x1b[38;2;183;0;71m═\x1b[38;2;179;0;75m═\x1b[38;2;175;0;79m╝\x1b[38;2;171;0;83m \x1b[38;2;167;0;87m \x1b[38;2;163;0;91m╚\x1b[38;2;158;0;96m═\x1b[38;2;154;0;100m╝\x1b[38;2;150;0;104m \x1b[38;2;146;0;108m \x1b[38;2;142;0;112m \x1b[38;2;137;0;117m \x1b[38;2;133;0;121m \x1b[38;2;129;0;125m╚\x1b[38;2;125;0;129m═\x1b[38;2;121;0;133m═\x1b[38;2;117;0;137m═\x1b[38;2;112;0;142m═\x1b[38;2;108;0;146m═\x1b[38;2;104;0;150m╝\x1b[38;2;100;0;154m \x1b[38;2;96;0;158m╚\x1b[38;2;91;0;163m═\x1b[38;2;87;0;167m═\x1b[38;2;83;0;171m═\x1b[38;2;79;0;175m═\x1b[38;2;75;0;179m═\x1b[38;2;71;0;183m╝\x1b[38;2;66;0;188m \x1b[38;2;62;0;192m \x1b[38;2;58;0;196m \x1b[38;2;54;0;200m╚\x1b[38;2;50;0;204m═\x1b[38;2;45;0;209m═\x1b[38;2;41;0;213m═\x1b[38;2;37;0;217m╝\x1b[38;2;33;0;221m \x1b[38;2;29;0;225m \x1b[38;2;25;0;229m \x1b[38;2;20;0;234m \x1b[38;2;16;0;238m╚\x1b[38;2;12;0;242m═\x1b[38;2;8;0;246m═\x1b[38;2;4;0;250m╝\x1b[38;2;0;0;255m \x1b[0m\n"
 flora_server = Flask("FloraBot", template_folder="FloraBot", static_folder="FloraBot")
@@ -40,10 +42,10 @@ def load_config():  # 加载FloraBot配置文件函数
         administrator = flora_config.get("Administrator")
         flora_api.update({"Administrator": administrator})
     else:  # 若文件不存在
-        print("FloraBot 启动失败, 未找到配置文件 Config.json")
+        logger.warning("FloraBot 启动失败, 未找到配置文件 Config.json")
         with open("./Config.json", "w", encoding="UTF-8") as write_flora_config:
             write_flora_config.write(json.dumps({"AutoInstallLibraries": True, "FloraHost": "127.0.0.1", "FloraPort": 3003, "FrameworkAddress": "127.0.0.1:3000", "BotQQ": 0, "Administrator": [0]}, ensure_ascii=False, indent=4))
-        print("已生成一个新的配置文件 Config.json , 请修改后再次启动 FloraBot")
+        logger.info("已生成一个新的配置文件 Config.json , 请修改后再次启动 FloraBot")
         exit()
 
 
@@ -68,16 +70,16 @@ def send_msg(msg: str, uid: str | int, gid: str | int | None, mid: str | int | N
 
 def install_libraries(libraries_name: str):
     if importlib.util.find_spec(libraries_name) is None:
-        print(f"正在安装 {libraries_name} 库...")
+        logger.info(f"正在安装 {libraries_name} 库...")
         try:
             subprocess.check_call([sys.executable, "-m", "pip", "install", libraries_name])
-            print(f"{libraries_name} 库安装完成")
+            logger.info(f"{libraries_name} 库安装完成")
         except subprocess.CalledProcessError:
-            print(f"{libraries_name} 库安装失败")
+            logger.warning(f"{libraries_name} 库安装失败")
 
 
 def load_plugins():  # 加载插件函数
-    print("正在加载插件, 请稍后...")
+    logger.info("正在加载插件, 请稍后...")
     plugins_info_dict.clear()
     plugins_dict.clear()
     for plugin in os.listdir("./FloraBot/Plugins"):  # 遍历所有插件
@@ -87,11 +89,11 @@ def load_plugins():  # 加载插件函数
                 plugin_config = json.loads(read_plugin_config.read())
             if os.path.isfile(f"./{plugin_path}/{plugin_config.get('MainPyName')}.py") and plugin_config.get("EnablePlugin"):  # 如果配置正确则导入插件
                 plugin_config = plugin_config.copy()
-                print(f"正在加载插件 {plugin_config.get('PluginName')} ...")
+                logger.info(f"正在加载插件 {plugin_config.get('PluginName')} ...")
                 plugin_config.update({"ThePluginPath": plugin_path})
                 plugins_info_dict.update({plugin_config.get("PluginName"): plugin_config})  # 添加插件信息
                 if auto_install and plugin_config.get("DependentLibraries") is not None:
-                    print("已开启自动安装依赖库, 正在安装插件所依赖的库...")
+                    logger.info("已开启自动安装依赖库, 正在安装插件所依赖的库...")
                     for libraries_name in plugin_config.get("DependentLibraries"):
                         install_libraries(libraries_name)
                 spec = importlib.util.spec_from_file_location(plugin_config.get("MainPyName"), f"./{plugin_path}/{plugin_config.get('MainPyName')}.py")
@@ -222,29 +224,34 @@ def process():  # 消息处理函数,不要主动调用这个函数
 
 def check_privileges():
     system = platform.system()
-    print(f"当前系统为 {system}")
+    logger.info(f"当前系统为 {system}")
     if system == "Windows":
         try:
             is_admin = ctypes.windll.shell32.IsUserAnAdmin()
         except:
             is_admin = False
         if is_admin:
-            print("\033[91m警告: 当前用户具有管理员权限, 若是添加了恶意插件, 后果不堪设想!!!\033[0m")
+            logger.warning("\033[91m警告: 当前用户具有管理员权限, 若是添加了恶意插件, 后果不堪设想!!!\033[0m")
     elif system in ["Linux", "Darwin"]:
         if os.geteuid() == 0:
-            print("\033[91m警告: 当前用户具有 root 权限, 若是添加了恶意插件, 后果不堪设想!!!\033[0m")
+            logger.warning("\033[91m警告: 当前用户具有 root 权限, 若是添加了恶意插件, 后果不堪设想!!!\033[0m")
 
 
-if __name__ == "__main__":
-    print(flora_logo)
+def main():
+    today=datetime.date.today()
+    logger.add(f'./logs/log-{str(today)}.log',format='{time} {level} {function} - {message}')
+    logger.info(f"\n{flora_logo}")
     check_privileges()
-    print("正在初始化 FloraBot , 请稍后...")
+    logger.info("正在初始化 FloraBot , 请稍后...")
     if not os.path.isdir("./FloraBot"):
         os.makedirs("./FloraBot")
     if not os.path.isdir("./FloraBot/Plugins"):
         os.makedirs("./FloraBot/Plugins")
     load_config()
-    print(f"欢迎使用 FloraBot {flora_version}")
-    print("\033[93m声明: 插件为第三方内容, 请您自行分辨是否为恶意插件, 若被恶意插件入侵/破坏了您的设备或恶意盗取了您的信息, 造成的损失请自负, FloraBot 作者概不负责也无义务负责!!!\033[0m")
+    logger.info(f"欢迎使用 FloraBot {flora_version}")
+    logger.warning("\033[93m声明: 插件为第三方内容, 请您自行分辨是否为恶意插件, 若被恶意插件入侵/破坏了您的设备或恶意盗取了您的信息, 造成的损失请自负, FloraBot 作者概不负责也无义务负责!!!\033[0m")
     load_plugins()
     flora_server.run(host=flora_host, port=flora_port)
+
+if __name__ == "__main__":
+    main()
