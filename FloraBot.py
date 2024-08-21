@@ -72,7 +72,7 @@ def install_libraries(libraries_name: str):
     if importlib.util.find_spec(libraries_name) is None:
         logger.info(f"正在安装 {libraries_name} 库...")
         try:
-            subprocess.check_call([sys.executable, "-m", "pip", "install", libraries_name])
+            subprocess.check_call([sys.executable, "-m", "pip", "install", libraries_name,"-i","https://mirrors.aliyun.com/pypi/simple"])
             logger.info(f"{libraries_name} 库安装完成")
         except subprocess.CalledProcessError:
             logger.warning(f"{libraries_name} 库安装失败")
